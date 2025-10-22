@@ -15,16 +15,24 @@ const Login = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // In a real app, this would call the backend
+
+    // Fake auth: persist session locally
+    const user = {
+      email,
+      fullName: email.split('@')[0],
+      role: 'user',
+    };
+    localStorage.setItem('fs_user', JSON.stringify(user));
+    window.dispatchEvent(new Event('fs-auth-change'));
+
     toast({
-      title: "Welcome back!",
-      description: "Logging you in...",
+      title: 'Welcome back!',
+      description: 'Logging you in...'
     });
 
     setTimeout(() => {
-      navigate("/dashboard/user");
-    }, 1500);
+      navigate('/dashboard/user');
+    }, 800);
   };
 
   return (

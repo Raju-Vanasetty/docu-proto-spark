@@ -21,22 +21,30 @@ const Register = () => {
     
     if (!role) {
       toast({
-        title: "Role required",
-        description: "Please select your role to continue",
-        variant: "destructive",
+        title: 'Role required',
+        description: 'Please select your role to continue',
+        variant: 'destructive',
       });
       return;
     }
 
-    // In a real app, this would call the backend
+    // Fake auth: persist session locally
+    const user = {
+      email,
+      fullName,
+      role,
+    };
+    localStorage.setItem('fs_user', JSON.stringify(user));
+    window.dispatchEvent(new Event('fs-auth-change'));
+
     toast({
-      title: "Account created!",
-      description: "Welcome to FarmShare. Redirecting to your dashboard...",
+      title: 'Account created!',
+      description: 'Welcome to FarmShare. Redirecting to your dashboard...'
     });
 
     setTimeout(() => {
       navigate(`/dashboard/${role}`);
-    }, 1500);
+    }, 800);
   };
 
   return (
