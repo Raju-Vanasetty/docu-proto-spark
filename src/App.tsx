@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Browse from "./pages/Browse";
+import Equipment from "./pages/Equipment";
+import Marketplace from "./pages/Marketplace";
 import DashboardUser from "./pages/DashboardUser";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +25,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/browse" element={<Browse />} />
+          <Route path="/equipment" element={<Equipment />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/dashboard/:role" element={<DashboardUser />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
