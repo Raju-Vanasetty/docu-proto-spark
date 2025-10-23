@@ -9,8 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const Marketplace = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
+  const [category, setCategory] = useState("all");
+  const [location, setLocation] = useState("all");
   const { toast } = useToast();
 
   const products = [
@@ -60,8 +60,8 @@ const Marketplace = () => {
     return products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.category.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !category || category === "all" || product.category.toLowerCase() === category;
-      const matchesLocation = !location || location === "all" || product.location.toLowerCase() === location;
+      const matchesCategory = category === "all" || product.category.toLowerCase() === category;
+      const matchesLocation = location === "all" || product.location.toLowerCase() === location;
 
       return matchesSearch && matchesCategory && matchesLocation;
     });
@@ -99,7 +99,7 @@ const Marketplace = () => {
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="vegetables">Vegetables</SelectItem>
               <SelectItem value="grains">Grains</SelectItem>
               <SelectItem value="dairy">Dairy</SelectItem>
@@ -111,7 +111,7 @@ const Marketplace = () => {
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               <SelectItem value="punjab">Punjab</SelectItem>
               <SelectItem value="haryana">Haryana</SelectItem>
               <SelectItem value="gujarat">Gujarat</SelectItem>

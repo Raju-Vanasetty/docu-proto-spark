@@ -9,8 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const Equipment = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
+  const [category, setCategory] = useState("all");
+  const [location, setLocation] = useState("all");
   const { toast } = useToast();
 
   const equipmentList = [
@@ -47,8 +47,8 @@ const Equipment = () => {
     return equipmentList.filter(equipment => {
       const matchesSearch = equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           equipment.category.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !category || category === "all" || equipment.category.toLowerCase() === category;
-      const matchesLocation = !location || location === "all" || equipment.location.toLowerCase() === location;
+      const matchesCategory = category === "all" || equipment.category.toLowerCase() === category;
+      const matchesLocation = location === "all" || equipment.location.toLowerCase() === location;
 
       return matchesSearch && matchesCategory && matchesLocation;
     });
@@ -86,7 +86,7 @@ const Equipment = () => {
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="heavy machinery">Heavy Machinery</SelectItem>
               <SelectItem value="irrigation">Irrigation</SelectItem>
               <SelectItem value="tools">Tools</SelectItem>
@@ -97,7 +97,7 @@ const Equipment = () => {
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               <SelectItem value="punjab">Punjab</SelectItem>
               <SelectItem value="haryana">Haryana</SelectItem>
               <SelectItem value="maharashtra">Maharashtra</SelectItem>

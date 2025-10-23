@@ -11,8 +11,8 @@ import farmPlots from "@/assets/farm-plots.jpg";
 
 const Browse = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [district, setDistrict] = useState("");
-  const [size, setSize] = useState("");
+  const [district, setDistrict] = useState("all");
+  const [size, setSize] = useState("all");
   const [sortBy, setSortBy] = useState("recommended");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const { toast } = useToast();
@@ -89,8 +89,8 @@ const Browse = () => {
     let filtered = plots.filter(plot => {
       const matchesSearch = plot.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           plot.location.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDistrict = !district || plot.location.toLowerCase().includes(district.toLowerCase());
-      const matchesSize = !size || 
+      const matchesDistrict = district === "all" || plot.location.toLowerCase().includes(district.toLowerCase());
+      const matchesSize = size === "all" || 
         (size === "small" && parseInt(plot.size) < 500) ||
         (size === "medium" && parseInt(plot.size) >= 500 && parseInt(plot.size) <= 750) ||
         (size === "large" && parseInt(plot.size) > 750);
@@ -154,7 +154,7 @@ const Browse = () => {
                   <SelectValue placeholder="District" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Districts</SelectItem>
+                  <SelectItem value="all">All Districts</SelectItem>
                   <SelectItem value="medak">Medak</SelectItem>
                   <SelectItem value="nizamabad">Nizamabad</SelectItem>
                   <SelectItem value="ranga-reddy">Ranga Reddy</SelectItem>
@@ -167,7 +167,7 @@ const Browse = () => {
                   <SelectValue placeholder="Size" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sizes</SelectItem>
+                  <SelectItem value="all">All Sizes</SelectItem>
                   <SelectItem value="small">Under 500 sq ft</SelectItem>
                   <SelectItem value="medium">500-750 sq ft</SelectItem>
                   <SelectItem value="large">Over 750 sq ft</SelectItem>
