@@ -281,7 +281,7 @@ const Browse = () => {
                   </div>
                 </div>
 
-                <Button className="w-full" onClick={() => handleViewDetails(plot.id)}>View Details</Button>
+                <Button className="w-full" onClick={() => navigate(`/plot-details?id=${plot.id}`)}>View Details</Button>
               </CardContent>
             </Card>
           ))}
