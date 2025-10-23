@@ -7,16 +7,18 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sprout, User, Tractor as TractorIcon, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<string>("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!role) {
@@ -28,23 +30,50 @@ const Register = () => {
       return;
     }
 
-    // Fake auth: persist session locally
-    const user = {
-      email,
-      fullName,
-      role,
-    };
-    localStorage.setItem('fs_user', JSON.stringify(user));
-    window.dispatchEvent(new Event('fs-auth-change'));
+    setLoading(true);
 
-    toast({
-      title: 'Account created!',
-      description: 'Welcome to FarmShare. Redirecting to your dashboard...'
-    });
+    try {
+      // Sign up the user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
 
-    setTimeout(() => {
-      navigate(`/dashboard/${role}`);
-    }, 800);
+      if (error) throw error;
+
+      if (data.user) {
+        // Insert user role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: data.user.id,
+            role: role as any,
+          });
+
+        if (roleError) throw roleError;
+
+        toast({
+          title: 'Account created!',
+          description: 'Welcome to FarmShare.',
+        });
+
+        navigate(`/dashboard/${role}`);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Registration failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -155,8 +184,8 @@ const Register = () => {
               </RadioGroup>
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Create Account
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">

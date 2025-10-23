@@ -6,33 +6,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sprout } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    // Fake auth: persist session locally
-    const user = {
-      email,
-      fullName: email.split('@')[0],
-      role: 'user',
-    };
-    localStorage.setItem('fs_user', JSON.stringify(user));
-    window.dispatchEvent(new Event('fs-auth-change'));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    toast({
-      title: 'Welcome back!',
-      description: 'Logging you in...'
-    });
+      if (error) throw error;
 
-    setTimeout(() => {
-      navigate('/dashboard/user');
-    }, 800);
+      toast({
+        title: 'Welcome back!',
+        description: 'Successfully logged in.',
+      });
+
+      // Fetch user role to redirect appropriately
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+
+      const role = roleData?.role || 'user';
+      navigate(`/dashboard/${role}`);
+    } catch (error: any) {
+      toast({
+        title: 'Login failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,8 +97,8 @@ const Login = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Login
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
 
             <div className="relative my-6">

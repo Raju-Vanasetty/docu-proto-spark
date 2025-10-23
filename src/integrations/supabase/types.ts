@@ -14,16 +14,416 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      equipment_listings: {
+        Row: {
+          availability_status: string
+          category: string
+          condition: string | null
+          created_at: string
+          description: string | null
+          id: string
+          images: string[] | null
+          location: string | null
+          name: string
+          price_per_day: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          availability_status?: string
+          category: string
+          condition?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          name: string
+          price_per_day: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          availability_status?: string
+          category?: string
+          condition?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          name?: string
+          price_per_day?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_listings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_rentals: {
+        Row: {
+          created_at: string
+          end_date: string
+          equipment_id: string
+          id: string
+          start_date: string
+          status: string
+          total_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          equipment_id: string
+          id?: string
+          start_date: string
+          status?: string
+          total_price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          equipment_id?: string
+          id?: string
+          start_date?: string
+          status?: string
+          total_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_rentals_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_rentals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      land_listings: {
+        Row: {
+          amenities: string[] | null
+          available_area_sqft: number
+          created_at: string
+          description: string | null
+          farmer_id: string
+          id: string
+          images: string[] | null
+          location: string
+          price_per_sqft_monthly: number
+          soil_type: string | null
+          status: string
+          title: string
+          total_area_sqft: number
+          updated_at: string
+          water_access: boolean | null
+        }
+        Insert: {
+          amenities?: string[] | null
+          available_area_sqft: number
+          created_at?: string
+          description?: string | null
+          farmer_id: string
+          id?: string
+          images?: string[] | null
+          location: string
+          price_per_sqft_monthly: number
+          soil_type?: string | null
+          status?: string
+          title: string
+          total_area_sqft: number
+          updated_at?: string
+          water_access?: boolean | null
+        }
+        Update: {
+          amenities?: string[] | null
+          available_area_sqft?: number
+          created_at?: string
+          description?: string | null
+          farmer_id?: string
+          id?: string
+          images?: string[] | null
+          location?: string
+          price_per_sqft_monthly?: number
+          soil_type?: string | null
+          status?: string
+          title?: string
+          total_area_sqft?: number
+          updated_at?: string
+          water_access?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "land_listings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          delivery_address: string
+          id: string
+          produce_id: string
+          quantity: number
+          status: string
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          delivery_address: string
+          id?: string
+          produce_id: string
+          quantity: number
+          status?: string
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          delivery_address?: string
+          id?: string
+          produce_id?: string
+          quantity?: number
+          status?: string
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_produce_id_fkey"
+            columns: ["produce_id"]
+            isOneToOne: false
+            referencedRelation: "produce_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plot_leases: {
+        Row: {
+          area_sqft: number
+          created_at: string
+          end_date: string
+          id: string
+          land_listing_id: string
+          monthly_price: number
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area_sqft: number
+          created_at?: string
+          end_date: string
+          id?: string
+          land_listing_id: string
+          monthly_price: number
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area_sqft?: number
+          created_at?: string
+          end_date?: string
+          id?: string
+          land_listing_id?: string
+          monthly_price?: number
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plot_leases_land_listing_id_fkey"
+            columns: ["land_listing_id"]
+            isOneToOne: false
+            referencedRelation: "land_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plot_leases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produce_listings: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          farmer_id: string
+          harvest_date: string | null
+          id: string
+          images: string[] | null
+          name: string
+          organic: boolean | null
+          price_per_unit: number
+          quantity_available: number
+          status: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          farmer_id: string
+          harvest_date?: string | null
+          id?: string
+          images?: string[] | null
+          name: string
+          organic?: boolean | null
+          price_per_unit: number
+          quantity_available: number
+          status?: string
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          farmer_id?: string
+          harvest_date?: string | null
+          id?: string
+          images?: string[] | null
+          name?: string
+          organic?: boolean | null
+          price_per_unit?: number
+          quantity_available?: number
+          status?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produce_listings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          location: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "farmer" | "vendor" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +550,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "farmer", "vendor", "admin"],
+    },
   },
 } as const
