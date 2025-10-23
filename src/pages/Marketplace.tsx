@@ -4,8 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ShoppingCart } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Marketplace = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const { toast } = useToast();
+
   const products = [
     {
       id: 1,
@@ -49,6 +56,24 @@ const Marketplace = () => {
     },
   ];
 
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !category || category === "all" || product.category.toLowerCase() === category;
+      const matchesLocation = !location || location === "all" || product.location.toLowerCase() === location;
+
+      return matchesSearch && matchesCategory && matchesLocation;
+    });
+  }, [searchTerm, category, location]);
+
+  const handleAddToCart = (productName: string) => {
+    toast({
+      title: "Added to Cart",
+      description: `${productName} has been added to your cart!`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -62,26 +87,31 @@ const Marketplace = () => {
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search products..." className="pl-10" />
+            <Input 
+              placeholder="Search products..." 
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <Select>
+          <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="">All Categories</SelectItem>
               <SelectItem value="vegetables">Vegetables</SelectItem>
               <SelectItem value="grains">Grains</SelectItem>
               <SelectItem value="dairy">Dairy</SelectItem>
               <SelectItem value="fruits">Fruits</SelectItem>
             </SelectContent>
           </Select>
-          <Select>
+          <Select value={location} onValueChange={setLocation}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
+              <SelectItem value="">All Locations</SelectItem>
               <SelectItem value="punjab">Punjab</SelectItem>
               <SelectItem value="haryana">Haryana</SelectItem>
               <SelectItem value="gujarat">Gujarat</SelectItem>
@@ -90,7 +120,7 @@ const Marketplace = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 bg-muted flex items-center justify-center text-6xl">
                 {product.image}
@@ -122,7 +152,11 @@ const Marketplace = () => {
                     <span className="text-sm text-muted-foreground">Price</span>
                     <span className="font-bold text-primary">{product.price}</span>
                   </div>
-                  <Button className="w-full" disabled={!product.inStock}>
+                  <Button 
+                    className="w-full" 
+                    disabled={!product.inStock}
+                    onClick={() => handleAddToCart(product.name)}
+                  >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {product.inStock ? "Add to Cart" : "Out of Stock"}
                   </Button>

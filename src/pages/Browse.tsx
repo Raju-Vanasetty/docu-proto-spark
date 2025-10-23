@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,11 @@ import farmPlots from "@/assets/farm-plots.jpg";
 
 const Browse = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [district, setDistrict] = useState("");
+  const [size, setSize] = useState("");
+  const [sortBy, setSortBy] = useState("recommended");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const { toast } = useToast();
 
   // Mock data for demonstration
   const plots = [
@@ -71,6 +77,49 @@ const Browse = () => {
     },
   ];
 
+  const toggleFilter = (filter: string) => {
+    setSelectedFilters(prev =>
+      prev.includes(filter)
+        ? prev.filter(f => f !== filter)
+        : [...prev, filter]
+    );
+  };
+
+  const filteredAndSortedPlots = useMemo(() => {
+    let filtered = plots.filter(plot => {
+      const matchesSearch = plot.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          plot.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDistrict = !district || plot.location.toLowerCase().includes(district.toLowerCase());
+      const matchesSize = !size || 
+        (size === "small" && parseInt(plot.size) < 500) ||
+        (size === "medium" && parseInt(plot.size) >= 500 && parseInt(plot.size) <= 750) ||
+        (size === "large" && parseInt(plot.size) > 750);
+      const matchesFilters = selectedFilters.length === 0 || 
+        selectedFilters.every(filter => 
+          filter === "Offers Training" ? plot.training : plot.amenities.includes(filter)
+        );
+
+      return matchesSearch && matchesDistrict && matchesSize && matchesFilters;
+    });
+
+    if (sortBy === "price-low") {
+      filtered.sort((a, b) => parseInt(a.price.replace(/[^\d]/g, '')) - parseInt(b.price.replace(/[^\d]/g, '')));
+    } else if (sortBy === "price-high") {
+      filtered.sort((a, b) => parseInt(b.price.replace(/[^\d]/g, '')) - parseInt(a.price.replace(/[^\d]/g, '')));
+    } else if (sortBy === "size") {
+      filtered.sort((a, b) => parseInt(b.size) - parseInt(a.size));
+    }
+
+    return filtered;
+  }, [plots, searchTerm, district, size, sortBy, selectedFilters]);
+
+  const handleViewDetails = (plotId: number) => {
+    toast({
+      title: "Plot Details",
+      description: "Plot details page coming soon!",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -100,11 +149,12 @@ const Browse = () => {
                 </div>
               </div>
               
-              <Select>
+              <Select value={district} onValueChange={setDistrict}>
                 <SelectTrigger>
                   <SelectValue placeholder="District" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">All Districts</SelectItem>
                   <SelectItem value="medak">Medak</SelectItem>
                   <SelectItem value="nizamabad">Nizamabad</SelectItem>
                   <SelectItem value="ranga-reddy">Ranga Reddy</SelectItem>
@@ -112,11 +162,12 @@ const Browse = () => {
                 </SelectContent>
               </Select>
 
-              <Select>
+              <Select value={size} onValueChange={setSize}>
                 <SelectTrigger>
                   <SelectValue placeholder="Size" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">All Sizes</SelectItem>
                   <SelectItem value="small">Under 500 sq ft</SelectItem>
                   <SelectItem value="medium">500-750 sq ft</SelectItem>
                   <SelectItem value="large">Over 750 sq ft</SelectItem>
@@ -125,19 +176,35 @@ const Browse = () => {
             </div>
 
             <div className="flex flex-wrap gap-2 mt-4">
-              <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+              <Badge 
+                variant={selectedFilters.includes("Water Access") ? "default" : "outline"} 
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => toggleFilter("Water Access")}
+              >
                 <Droplets className="h-3 w-3 mr-1" />
                 Water Access
               </Badge>
-              <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+              <Badge 
+                variant={selectedFilters.includes("Tool Shed") ? "default" : "outline"} 
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => toggleFilter("Tool Shed")}
+              >
                 <Home className="h-3 w-3 mr-1" />
                 Tool Shed
               </Badge>
-              <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+              <Badge 
+                variant={selectedFilters.includes("Fenced") ? "default" : "outline"} 
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => toggleFilter("Fenced")}
+              >
                 <Shield className="h-3 w-3 mr-1" />
                 Fenced
               </Badge>
-              <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+              <Badge 
+                variant={selectedFilters.includes("Offers Training") ? "default" : "outline"} 
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => toggleFilter("Offers Training")}
+              >
                 Offers Training
               </Badge>
             </div>
@@ -146,8 +213,8 @@ const Browse = () => {
 
         {/* Results */}
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-muted-foreground">{plots.length} plots available</p>
-          <Select defaultValue="recommended">
+          <p className="text-muted-foreground">{filteredAndSortedPlots.length} plots available</p>
+          <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-[180px]">
               <SelectValue />
             </SelectTrigger>
@@ -162,7 +229,7 @@ const Browse = () => {
 
         {/* Plot Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plots.map((plot) => (
+          {filteredAndSortedPlots.map((plot) => (
             <Card key={plot.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
               <div className="relative h-48 overflow-hidden">
                 <img
@@ -221,7 +288,7 @@ const Browse = () => {
                   </div>
                 </div>
 
-                <Button className="w-full">View Details</Button>
+                <Button className="w-full" onClick={() => handleViewDetails(plot.id)}>View Details</Button>
               </CardContent>
             </Card>
           ))}

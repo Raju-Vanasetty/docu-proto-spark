@@ -4,8 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Tractor, Hammer, Droplet } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Equipment = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const { toast } = useToast();
+
   const equipmentList = [
     {
       id: 1,
@@ -36,6 +43,24 @@ const Equipment = () => {
     },
   ];
 
+  const filteredEquipment = useMemo(() => {
+    return equipmentList.filter(equipment => {
+      const matchesSearch = equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          equipment.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !category || category === "all" || equipment.category.toLowerCase() === category;
+      const matchesLocation = !location || location === "all" || equipment.location.toLowerCase() === location;
+
+      return matchesSearch && matchesCategory && matchesLocation;
+    });
+  }, [searchTerm, category, location]);
+
+  const handleRentNow = (equipmentName: string) => {
+    toast({
+      title: "Rent Equipment",
+      description: `Rental request for ${equipmentName} submitted successfully!`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -49,25 +74,30 @@ const Equipment = () => {
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search equipment..." className="pl-10" />
+            <Input 
+              placeholder="Search equipment..." 
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <Select>
+          <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="machinery">Heavy Machinery</SelectItem>
+              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="heavy machinery">Heavy Machinery</SelectItem>
               <SelectItem value="irrigation">Irrigation</SelectItem>
               <SelectItem value="tools">Tools</SelectItem>
             </SelectContent>
           </Select>
-          <Select>
+          <Select value={location} onValueChange={setLocation}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
+              <SelectItem value="">All Locations</SelectItem>
               <SelectItem value="punjab">Punjab</SelectItem>
               <SelectItem value="haryana">Haryana</SelectItem>
               <SelectItem value="maharashtra">Maharashtra</SelectItem>
@@ -76,7 +106,7 @@ const Equipment = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {equipmentList.map((equipment) => (
+          {filteredEquipment.map((equipment) => (
             <Card key={equipment.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 bg-muted flex items-center justify-center text-6xl">
                 {equipment.image}
@@ -104,7 +134,11 @@ const Equipment = () => {
                     <span className="text-sm text-muted-foreground">Rental Rate</span>
                     <span className="font-bold text-primary">{equipment.price}</span>
                   </div>
-                  <Button className="w-full" disabled={!equipment.available}>
+                  <Button 
+                    className="w-full" 
+                    disabled={!equipment.available}
+                    onClick={() => handleRentNow(equipment.name)}
+                  >
                     {equipment.available ? "Rent Now" : "Not Available"}
                   </Button>
                 </div>

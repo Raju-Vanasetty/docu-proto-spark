@@ -3,12 +3,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import { MapPin, Users, Tractor, ShoppingBag, CheckCircle, Shield, Sprout } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-farm.jpg";
 import farmingHands from "@/assets/farming-hands.jpg";
 import farmPlots from "@/assets/farm-plots.jpg";
 import equipment from "@/assets/equipment.jpg";
 
 const Index = () => {
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    verifiedFarmers: 0,
+    availablePlots: 0,
+    equipmentItems: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [produceCount, profilesCount, landCount, equipmentCount] = await Promise.all([
+        supabase.from('produce_listings').select('*', { count: 'exact', head: true }),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('land_listings').select('*', { count: 'exact', head: true }),
+        supabase.from('equipment_listings').select('*', { count: 'exact', head: true }),
+      ]);
+
+      setStats({
+        activeListings: produceCount.count || 0,
+        verifiedFarmers: profilesCount.count || 0,
+        availablePlots: landCount.count || 0,
+        equipmentItems: equipmentCount.count || 0,
+      });
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -239,19 +268,19 @@ const Index = () => {
                 <div className="space-y-4 text-sm">
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Active Listings</span>
-                    <span className="font-bold">2,847</span>
+                    <span className="font-bold">{stats.activeListings}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Verified Farmers</span>
-                    <span className="font-bold">1,235</span>
+                    <span className="font-bold">{stats.verifiedFarmers}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Available Plots</span>
-                    <span className="font-bold">856</span>
+                    <span className="font-bold">{stats.availablePlots}</span>
                   </div>
                   <div className="flex justify-between py-2">
                     <span className="text-muted-foreground">Equipment Items</span>
-                    <span className="font-bold">342</span>
+                    <span className="font-bold">{stats.equipmentItems}</span>
                   </div>
                 </div>
               </Card>
