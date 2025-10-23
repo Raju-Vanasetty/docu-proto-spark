@@ -3,8 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, TrendingUp, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const DashboardLandowner = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -63,7 +66,7 @@ const DashboardLandowner = () => {
                 <MapPin className="h-5 w-5" />
                 My Land Listings
               </CardTitle>
-              <Button size="sm">
+              <Button size="sm" onClick={() => navigate("/add-land-listing")}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Listing
               </Button>
@@ -86,10 +89,20 @@ const DashboardLandowner = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-land-listing")}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/plot-details?id=1")}
+                  >
                     View Details
                   </Button>
                 </div>
@@ -112,10 +125,20 @@ const DashboardLandowner = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-land-listing")}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/plot-details?id=2")}
+                  >
                     View Details
                   </Button>
                 </div>

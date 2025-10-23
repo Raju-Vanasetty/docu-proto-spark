@@ -6,12 +6,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, ShoppingCart } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/contexts/CartContext";
+import { useNavigate } from "react-router-dom";
 
 const Marketplace = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [location, setLocation] = useState("all");
   const { toast } = useToast();
+  const { addToCart, items } = useCart();
 
   const products = [
     {
@@ -67,10 +71,18 @@ const Marketplace = () => {
     });
   }, [searchTerm, category, location]);
 
-  const handleAddToCart = (productName: string) => {
+  const handleAddToCart = (product: typeof products[0]) => {
+    const priceNum = parseInt(product.price.replace(/[^0-9]/g, ''));
+    addToCart({
+      id: product.id.toString(),
+      name: product.name,
+      price: priceNum,
+      unit: "kg",
+      farmer: product.farmer,
+    });
     toast({
       title: "Added to Cart",
-      description: `${productName} has been added to your cart!`,
+      description: `${product.name} has been added to your cart!`,
     });
   };
 
@@ -79,9 +91,20 @@ const Marketplace = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Farm Marketplace</h1>
-          <p className="text-muted-foreground">Buy fresh produce directly from farmers</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Farm Marketplace</h1>
+            <p className="text-muted-foreground">Buy fresh produce directly from farmers</p>
+          </div>
+          <Button onClick={() => navigate("/cart")} variant="outline" className="relative">
+            <ShoppingCart className="h-5 w-5 mr-2" />
+            Cart
+            {items.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                {items.length}
+              </span>
+            )}
+          </Button>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -155,7 +178,7 @@ const Marketplace = () => {
                   <Button 
                     className="w-full" 
                     disabled={!product.inStock}
-                    onClick={() => handleAddToCart(product.name)}
+                    onClick={() => handleAddToCart(product)}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {product.inStock ? "Add to Cart" : "Out of Stock"}

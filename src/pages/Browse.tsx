@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,12 @@ import { MapPin, Search, Droplets, Home, Shield, Star } from "lucide-react";
 import farmPlots from "@/assets/farm-plots.jpg";
 
 const Browse = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [district, setDistrict] = useState("all");
   const [size, setSize] = useState("all");
   const [sortBy, setSortBy] = useState("recommended");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const { toast } = useToast();
 
   // Mock data for demonstration
   const plots = [
@@ -112,13 +112,6 @@ const Browse = () => {
 
     return filtered;
   }, [plots, searchTerm, district, size, sortBy, selectedFilters]);
-
-  const handleViewDetails = (plotId: number) => {
-    toast({
-      title: "Plot Details",
-      description: "Plot details page coming soon!",
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background">

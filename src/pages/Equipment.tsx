@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Tractor, Hammer, Droplet } from "lucide-react";
 import { useState, useMemo } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Equipment = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [location, setLocation] = useState("all");
-  const { toast } = useToast();
 
   const equipmentList = [
     {
@@ -54,11 +54,9 @@ const Equipment = () => {
     });
   }, [searchTerm, category, location]);
 
-  const handleRentNow = (equipmentName: string) => {
-    toast({
-      title: "Rent Equipment",
-      description: `Rental request for ${equipmentName} submitted successfully!`,
-    });
+  const handleRentNow = (equipment: typeof equipmentList[0]) => {
+    const rentalAmount = parseInt(equipment.price.replace(/[^0-9]/g, ''));
+    navigate(`/payment?type=equipment&id=${equipment.id}&amount=${rentalAmount * 5}`);
   };
 
   return (
@@ -137,7 +135,7 @@ const Equipment = () => {
                   <Button 
                     className="w-full" 
                     disabled={!equipment.available}
-                    onClick={() => handleRentNow(equipment.name)}
+                    onClick={() => handleRentNow(equipment)}
                   >
                     {equipment.available ? "Rent Now" : "Not Available"}
                   </Button>

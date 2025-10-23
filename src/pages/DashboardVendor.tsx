@@ -3,8 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tractor, Package, TrendingUp, Plus, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const DashboardVendor = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -63,7 +66,7 @@ const DashboardVendor = () => {
                 <Package className="h-5 w-5" />
                 My Equipment
               </CardTitle>
-              <Button size="sm">
+              <Button size="sm" onClick={() => navigate("/add-equipment-listing")}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Equipment
               </Button>
@@ -86,10 +89,20 @@ const DashboardVendor = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-equipment-listing")}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-equipment-listing")}
+                  >
                     View Details
                   </Button>
                 </div>
@@ -112,10 +125,20 @@ const DashboardVendor = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-equipment-listing")}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-equipment-listing")}
+                  >
                     View Details
                   </Button>
                 </div>
@@ -138,10 +161,20 @@ const DashboardVendor = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-equipment-listing")}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate("/add-equipment-listing")}
+                  >
                     View Details
                   </Button>
                 </div>

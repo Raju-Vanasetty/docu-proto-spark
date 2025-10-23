@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Tractor, ShoppingBag, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const DashboardHobbyist = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -88,7 +90,12 @@ const DashboardHobbyist = () => {
                     <span className="text-muted-foreground">Expires:</span> 4 months
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-3" size="sm">
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-3" 
+                  size="sm"
+                  onClick={() => navigate("/plot-details?id=1")}
+                >
                   View Details
                 </Button>
               </div>
@@ -109,7 +116,12 @@ const DashboardHobbyist = () => {
                     <span className="text-muted-foreground">Expires:</span> 5 months
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-3" size="sm">
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-3" 
+                  size="sm"
+                  onClick={() => navigate("/plot-details?id=2")}
+                >
                   View Details
                 </Button>
               </div>
@@ -177,7 +189,7 @@ const DashboardHobbyist = () => {
                 <ShoppingBag className="h-5 w-5" />
                 My Produce Listings
               </CardTitle>
-              <Button size="sm">
+              <Button size="sm" onClick={() => navigate("/add-produce-listing")}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Listing
               </Button>
@@ -193,7 +205,12 @@ const DashboardHobbyist = () => {
                     <Badge variant="secondary">Active</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">Available: 25 kg</p>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate("/add-produce-listing")}
+                  >
                     Edit Listing
                   </Button>
                 </div>
@@ -207,7 +224,12 @@ const DashboardHobbyist = () => {
                     <Badge variant="secondary">Active</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">Available: 15 kg</p>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate("/add-produce-listing")}
+                  >
                     Edit Listing
                   </Button>
                 </div>
@@ -221,7 +243,12 @@ const DashboardHobbyist = () => {
                     <Badge>Sold Out</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">Sold: 30 kg</p>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate("/add-produce-listing")}
+                  >
                     Relist
                   </Button>
                 </div>
