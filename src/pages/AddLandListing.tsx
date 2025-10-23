@@ -6,13 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const AddLandListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id");
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     location: "",
@@ -26,13 +32,105 @@ const AddLandListing = () => {
     training: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (editId) {
+      fetchListing();
+    }
+  }, [editId]);
+
+  const fetchListing = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("land_listings")
+        .select("*")
+        .eq("id", editId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const amenities = data.amenities || [];
+        setFormData({
+          title: data.title,
+          location: data.location,
+          totalArea: data.total_area_sqft.toString(),
+          pricePerSqFt: data.price_per_sqft_monthly.toString(),
+          soilType: data.soil_type || "",
+          description: data.description || "",
+          waterAccess: data.water_access || false,
+          toolShed: amenities.includes("tool_shed"),
+          fenced: amenities.includes("fenced"),
+          training: amenities.includes("training"),
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Listing Created!",
-      description: "Your land listing has been created successfully.",
-    });
-    navigate("/dashboard/farmer");
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const amenities = [];
+      if (formData.toolShed) amenities.push("tool_shed");
+      if (formData.fenced) amenities.push("fenced");
+      if (formData.training) amenities.push("training");
+
+      const listingData = {
+        title: formData.title,
+        location: formData.location,
+        total_area_sqft: parseFloat(formData.totalArea),
+        available_area_sqft: editId ? undefined : parseFloat(formData.totalArea),
+        price_per_sqft_monthly: parseFloat(formData.pricePerSqFt),
+        soil_type: formData.soilType,
+        description: formData.description,
+        water_access: formData.waterAccess,
+        amenities,
+        farmer_id: user.id,
+      };
+
+      if (editId) {
+        const { error } = await supabase
+          .from("land_listings")
+          .update(listingData)
+          .eq("id", editId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Listing Updated!",
+          description: "Your land listing has been updated successfully.",
+        });
+      } else {
+        const { error } = await supabase
+          .from("land_listings")
+          .insert([listingData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Listing Created!",
+          description: "Your land listing has been created successfully.",
+        });
+      }
+
+      navigate("/dashboard/farmer");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +149,7 @@ const AddLandListing = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Add Land Listing</CardTitle>
+            <CardTitle>{editId ? "Edit" : "Add"} Land Listing</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -173,8 +271,8 @@ const AddLandListing = () => {
                 <Button type="button" variant="outline" onClick={() => navigate("/dashboard/farmer")} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1">
-                  Create Listing
+                <Button type="submit" className="flex-1" disabled={loading}>
+                  {loading ? "Saving..." : editId ? "Update Listing" : "Create Listing"}
                 </Button>
               </div>
             </form>

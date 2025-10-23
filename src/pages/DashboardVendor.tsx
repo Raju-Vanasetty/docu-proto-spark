@@ -4,9 +4,51 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tractor, Package, TrendingUp, Plus, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const DashboardVendor = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [equipment, setEquipment] = useState<any[]>([]);
+  const [rentals, setRentals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    try {
+      // Fetch equipment listings
+      const { data: equipmentData } = await supabase
+        .from("equipment_listings")
+        .select("*")
+        .eq("vendor_id", user?.id)
+        .order("created_at", { ascending: false });
+
+      // Fetch rentals for these equipment
+      const { data: rentalsData } = await supabase
+        .from("equipment_rentals")
+        .select(`
+          *,
+          equipment:equipment_listings(name),
+          user:profiles(full_name)
+        `)
+        .in("equipment_id", equipmentData?.map(e => e.id) || [])
+        .eq("status", "active");
+
+      setEquipment(equipmentData || []);
+      setRentals(rentalsData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   return (
     <div className="min-h-screen bg-background">
@@ -25,7 +67,7 @@ const DashboardVendor = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Equipment Listed</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">8</div>
+              <div className="text-3xl font-bold">{equipment.length}</div>
             </CardContent>
           </Card>
 
@@ -34,7 +76,7 @@ const DashboardVendor = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Active Rentals</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">4</div>
+              <div className="text-3xl font-bold">{rentals.length}</div>
             </CardContent>
           </Card>
 
@@ -43,7 +85,7 @@ const DashboardVendor = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">₹45,000</div>
+              <div className="text-3xl font-bold">₹{rentals.reduce((sum, r) => sum + parseFloat(r.total_price), 0).toLocaleString()}</div>
             </CardContent>
           </Card>
 
@@ -52,7 +94,7 @@ const DashboardVendor = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Earned</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">₹2,15,000</div>
+              <div className="text-3xl font-bold">₹{(rentals.reduce((sum, r) => sum + parseFloat(r.total_price), 0) * 5).toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -72,113 +114,51 @@ const DashboardVendor = () => {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold">Tiller Machine</h4>
-                    <p className="text-sm text-muted-foreground">Heavy Machinery</p>
+              {loading ? (
+                <p className="text-muted-foreground">Loading...</p>
+              ) : equipment.length === 0 ? (
+                <p className="text-muted-foreground">No equipment listed yet. Add your first one!</p>
+              ) : (
+                equipment.map((item) => (
+                  <div key={item.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold">{item.name}</h4>
+                        <p className="text-sm text-muted-foreground">{item.category}</p>
+                      </div>
+                      <Badge variant={item.availability_status === 'available' ? 'secondary' : 'default'}>
+                        {item.availability_status}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-4 text-sm mt-3">
+                      <div>
+                        <span className="text-muted-foreground">Rate:</span> ₹{item.price_per_day}/day
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Condition:</span> {item.condition}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => navigate(`/add-equipment-listing?id=${item.id}`)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => navigate(`/add-equipment-listing?id=${item.id}`)}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
-                  <Badge>Rented</Badge>
-                </div>
-                <div className="flex gap-4 text-sm mt-3">
-                  <div>
-                    <span className="text-muted-foreground">Rate:</span> ₹500/day
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Return:</span> 2 days
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => navigate("/add-equipment-listing")}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => navigate("/add-equipment-listing")}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold">Irrigation Pump</h4>
-                    <p className="text-sm text-muted-foreground">Irrigation</p>
-                  </div>
-                  <Badge variant="secondary">Available</Badge>
-                </div>
-                <div className="flex gap-4 text-sm mt-3">
-                  <div>
-                    <span className="text-muted-foreground">Rate:</span> ₹300/day
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Status:</span> Ready
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => navigate("/add-equipment-listing")}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => navigate("/add-equipment-listing")}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold">Harvester</h4>
-                    <p className="text-sm text-muted-foreground">Heavy Machinery</p>
-                  </div>
-                  <Badge>Rented</Badge>
-                </div>
-                <div className="flex gap-4 text-sm mt-3">
-                  <div>
-                    <span className="text-muted-foreground">Rate:</span> ₹1,200/day
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Return:</span> 5 days
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => navigate("/add-equipment-listing")}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => navigate("/add-equipment-listing")}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </div>
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -191,53 +171,35 @@ const DashboardVendor = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold">Rajesh Kumar</h4>
-                    <p className="text-sm text-muted-foreground">Tiller Machine</p>
+              {rentals.length === 0 ? (
+                <p className="text-muted-foreground">No active rentals yet.</p>
+              ) : (
+                rentals.map((rental) => (
+                  <div key={rental.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold">{rental.user?.full_name || 'Unknown User'}</h4>
+                        <p className="text-sm text-muted-foreground">{rental.equipment?.name}</p>
+                      </div>
+                      <Badge>Active</Badge>
+                    </div>
+                    <div className="flex gap-4 text-sm mt-3">
+                      <div>
+                        <Calendar className="h-3 w-3 inline mr-1" />
+                        <span className="text-muted-foreground">Started:</span> {new Date(rental.start_date).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex gap-4 text-sm mt-2">
+                      <div>
+                        <span className="text-muted-foreground">Return:</span> {new Date(rental.end_date).toLocaleDateString()}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Total:</span> ₹{parseFloat(rental.total_price).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
-                  <Badge>Active</Badge>
-                </div>
-                <div className="flex gap-4 text-sm mt-3">
-                  <div>
-                    <Calendar className="h-3 w-3 inline mr-1" />
-                    <span className="text-muted-foreground">Started:</span> 3 days ago
-                  </div>
-                </div>
-                <div className="flex gap-4 text-sm mt-2">
-                  <div>
-                    <span className="text-muted-foreground">Return:</span> 2 days
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Total:</span> ₹2,500
-                  </div>
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold">Priya Sharma</h4>
-                    <p className="text-sm text-muted-foreground">Harvester</p>
-                  </div>
-                  <Badge>Active</Badge>
-                </div>
-                <div className="flex gap-4 text-sm mt-3">
-                  <div>
-                    <Calendar className="h-3 w-3 inline mr-1" />
-                    <span className="text-muted-foreground">Started:</span> 1 day ago
-                  </div>
-                </div>
-                <div className="flex gap-4 text-sm mt-2">
-                  <div>
-                    <span className="text-muted-foreground">Return:</span> 5 days
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Total:</span> ₹7,200
-                  </div>
-                </div>
-              </div>
+                ))
+              )}
             </CardContent>
           </Card>
 

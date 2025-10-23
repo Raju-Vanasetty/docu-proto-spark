@@ -7,13 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const AddProduceListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id");
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -24,13 +30,95 @@ const AddProduceListing = () => {
     description: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (editId) {
+      fetchProduce();
+    }
+  }, [editId]);
+
+  const fetchProduce = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("produce_listings")
+        .select("*")
+        .eq("id", editId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          name: data.name,
+          category: data.category,
+          price: data.price_per_unit.toString(),
+          unit: data.unit,
+          quantity: data.quantity_available.toString(),
+          organic: data.organic || false,
+          description: data.description || "",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Listing Created!",
-      description: "Your produce listing has been created successfully.",
-    });
-    navigate("/dashboard/user");
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const produceData = {
+        name: formData.name,
+        category: formData.category,
+        price_per_unit: parseFloat(formData.price),
+        unit: formData.unit,
+        quantity_available: parseFloat(formData.quantity),
+        organic: formData.organic,
+        description: formData.description,
+        farmer_id: user.id,
+        status: 'active',
+      };
+
+      if (editId) {
+        const { error } = await supabase
+          .from("produce_listings")
+          .update(produceData)
+          .eq("id", editId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Listing Updated!",
+          description: "Your produce listing has been updated successfully.",
+        });
+      } else {
+        const { error } = await supabase
+          .from("produce_listings")
+          .insert([produceData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Listing Created!",
+          description: "Your produce listing has been created successfully.",
+        });
+      }
+
+      navigate("/dashboard/user");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,7 +137,7 @@ const AddProduceListing = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Add Produce Listing</CardTitle>
+            <CardTitle>{editId ? "Edit" : "Add"} Produce Listing</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -143,8 +231,8 @@ const AddProduceListing = () => {
                 <Button type="button" variant="outline" onClick={() => navigate("/dashboard/user")} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1">
-                  Create Listing
+                <Button type="submit" className="flex-1" disabled={loading}>
+                  {loading ? "Saving..." : editId ? "Update Listing" : "Create Listing"}
                 </Button>
               </div>
             </form>

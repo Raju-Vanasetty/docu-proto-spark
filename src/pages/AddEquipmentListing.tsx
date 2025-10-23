@@ -6,13 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const AddEquipmentListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id");
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -22,13 +28,92 @@ const AddEquipmentListing = () => {
     description: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (editId) {
+      fetchEquipment();
+    }
+  }, [editId]);
+
+  const fetchEquipment = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("equipment_listings")
+        .select("*")
+        .eq("id", editId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          name: data.name,
+          category: data.category,
+          pricePerDay: data.price_per_day.toString(),
+          location: data.location || "",
+          condition: data.condition || "",
+          description: data.description || "",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Equipment Added!",
-      description: "Your equipment listing has been created successfully.",
-    });
-    navigate("/dashboard/vendor");
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const equipmentData = {
+        name: formData.name,
+        category: formData.category,
+        price_per_day: parseFloat(formData.pricePerDay),
+        location: formData.location,
+        condition: formData.condition,
+        description: formData.description,
+        vendor_id: user.id,
+      };
+
+      if (editId) {
+        const { error } = await supabase
+          .from("equipment_listings")
+          .update(equipmentData)
+          .eq("id", editId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Equipment Updated!",
+          description: "Your equipment listing has been updated successfully.",
+        });
+      } else {
+        const { error } = await supabase
+          .from("equipment_listings")
+          .insert([equipmentData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Equipment Added!",
+          description: "Your equipment listing has been created successfully.",
+        });
+      }
+
+      navigate("/dashboard/vendor");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,7 +132,7 @@ const AddEquipmentListing = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Add Equipment</CardTitle>
+            <CardTitle>{editId ? "Edit" : "Add"} Equipment</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,8 +215,8 @@ const AddEquipmentListing = () => {
                 <Button type="button" variant="outline" onClick={() => navigate("/dashboard/vendor")} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1">
-                  Add Equipment
+                <Button type="submit" className="flex-1" disabled={loading}>
+                  {loading ? "Saving..." : editId ? "Update Equipment" : "Add Equipment"}
                 </Button>
               </div>
             </form>
