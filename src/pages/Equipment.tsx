@@ -40,13 +40,13 @@ const Equipment = () => {
   const filteredEquipment = useMemo(() => {
     return equipmentList.filter(equipment => {
       const matchesSearch = equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          equipment.category.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = category === "all" || equipment.category.toLowerCase() === category;
-      const matchesLocation = location === "all" || equipment.location.toLowerCase() === location;
+                          equipment.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = category === "all" || equipment.category?.toLowerCase().includes(category.toLowerCase());
+      const matchesLocation = location === "all" || equipment.location?.toLowerCase().includes(location.toLowerCase());
 
       return matchesSearch && matchesCategory && matchesLocation;
     });
-  }, [searchTerm, category, location]);
+  }, [equipmentList, searchTerm, category, location]);
 
   const handleRentNow = (equipment: any) => {
     const rentalAmount = equipment.price_per_day * 5; // 5 days rental
