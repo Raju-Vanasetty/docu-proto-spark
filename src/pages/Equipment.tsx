@@ -4,44 +4,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Tractor, Hammer, Droplet } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Equipment = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [location, setLocation] = useState("all");
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const equipmentList = [
-    {
-      id: 1,
-      name: "John Deere Tractor",
-      category: "Heavy Machinery",
-      price: "₹2,500/day",
-      location: "Punjab",
-      image: "🚜",
-      available: true,
-    },
-    {
-      id: 2,
-      name: "Irrigation Pump",
-      category: "Irrigation",
-      price: "₹800/day",
-      location: "Haryana",
-      image: "💧",
-      available: true,
-    },
-    {
-      id: 3,
-      name: "Harvester Machine",
-      category: "Heavy Machinery",
-      price: "₹3,500/day",
-      location: "Maharashtra",
-      image: "🌾",
-      available: false,
-    },
-  ];
+  useEffect(() => {
+    fetchEquipment();
+  }, []);
+
+  const fetchEquipment = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("equipment_listings")
+        .select("*")
+        .eq("availability_status", "available");
+
+      if (error) throw error;
+
+      setEquipmentList(data || []);
+    } catch (error) {
+      console.error("Error fetching equipment:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEquipment = useMemo(() => {
     return equipmentList.filter(equipment => {
@@ -54,9 +48,9 @@ const Equipment = () => {
     });
   }, [searchTerm, category, location]);
 
-  const handleRentNow = (equipment: typeof equipmentList[0]) => {
-    const rentalAmount = parseInt(equipment.price.replace(/[^0-9]/g, ''));
-    navigate(`/payment?type=equipment&id=${equipment.id}&amount=${rentalAmount * 5}`);
+  const handleRentNow = (equipment: any) => {
+    const rentalAmount = equipment.price_per_day * 5; // 5 days rental
+    navigate(`/payment?type=equipment&id=${equipment.id}&amount=${rentalAmount}`);
   };
 
   return (
@@ -104,45 +98,50 @@ const Equipment = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEquipment.map((equipment) => (
-            <Card key={equipment.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 bg-muted flex items-center justify-center text-6xl">
-                {equipment.image}
-              </div>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{equipment.name}</CardTitle>
-                    <CardDescription>{equipment.category}</CardDescription>
-                  </div>
-                  {equipment.available ? (
+          {loading ? (
+            <p className="text-muted-foreground col-span-full text-center py-8">Loading equipment...</p>
+          ) : filteredEquipment.length === 0 ? (
+            <p className="text-muted-foreground col-span-full text-center py-8">No equipment found</p>
+          ) : (
+            filteredEquipment.map((equipment) => (
+              <Card key={equipment.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-muted flex items-center justify-center text-6xl">
+                  🚜
+                </div>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-xl">{equipment.name}</CardTitle>
+                      <CardDescription>{equipment.category}</CardDescription>
+                    </div>
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">Available</span>
-                  ) : (
-                    <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">Rented</span>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Location</span>
-                    <span className="font-medium">{equipment.location}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Rental Rate</span>
-                    <span className="font-bold text-primary">{equipment.price}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Condition</span>
+                      <span className="font-medium">{equipment.condition}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Location</span>
+                      <span className="font-medium">{equipment.location}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Rental Rate</span>
+                      <span className="font-bold text-primary">₹{equipment.price_per_day}/day</span>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => handleRentNow(equipment)}
+                    >
+                      Rent Now
+                    </Button>
                   </div>
-                  <Button 
-                    className="w-full" 
-                    disabled={!equipment.available}
-                    onClick={() => handleRentNow(equipment)}
-                  >
-                    {equipment.available ? "Rent Now" : "Not Available"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </main>
     </div>

@@ -19,8 +19,9 @@ const Cart = () => {
     e.preventDefault();
     if (!address || !phone) return;
     const total = getTotal();
+    const cartData = encodeURIComponent(JSON.stringify(items));
     clearCart();
-    navigate(`/payment?type=marketplace&amount=${total}`);
+    navigate(`/payment?type=marketplace&amount=${total}&cart=${cartData}&address=${encodeURIComponent(address)}`);
   };
 
   if (items.length === 0) {

@@ -7,6 +7,7 @@ export interface CartItem {
   quantity: number;
   unit: string;
   farmer: string;
+  produceId: string;
 }
 
 interface CartContextType {

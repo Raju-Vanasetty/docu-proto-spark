@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Search, Droplets, Home, Shield, Star } from "lucide-react";
 import farmPlots from "@/assets/farm-plots.jpg";
+import { supabase } from "@/integrations/supabase/client";
 
 const Browse = () => {
   const navigate = useNavigate();
@@ -16,66 +17,30 @@ const Browse = () => {
   const [size, setSize] = useState("all");
   const [sortBy, setSortBy] = useState("recommended");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [plots, setPlots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration
-  const plots = [
-    {
-      id: 1,
-      title: "Organic Farm Plot - East District",
-      location: "Medak, Telangana",
-      size: "500 sq ft",
-      price: "₹12,000",
-      term: "6 months",
-      amenities: ["Water Access", "Fenced", "Organic", "Tool Shed"],
-      rating: 4.8,
-      reviews: 24,
-      image: farmPlots,
-      verified: true,
-      training: true,
-    },
-    {
-      id: 2,
-      title: "Riverside Farming Land",
-      location: "Nizamabad, Telangana",
-      size: "750 sq ft",
-      price: "₹18,000",
-      term: "6 months",
-      amenities: ["Water Access", "Organic", "Irrigation"],
-      rating: 4.9,
-      reviews: 31,
-      image: farmPlots,
-      verified: true,
-      training: true,
-    },
-    {
-      id: 3,
-      title: "Community Garden Plot",
-      location: "Ranga Reddy, Telangana",
-      size: "400 sq ft",
-      price: "₹10,000",
-      term: "6 months",
-      amenities: ["Water Access", "Tool Shed", "Fenced"],
-      rating: 4.7,
-      reviews: 18,
-      image: farmPlots,
-      verified: true,
-      training: false,
-    },
-    {
-      id: 4,
-      title: "Hilltop Farm Plot",
-      location: "Karimnagar, Telangana",
-      size: "600 sq ft",
-      price: "₹15,000",
-      term: "6 months",
-      amenities: ["Water Access", "Organic", "Fenced", "Tool Shed"],
-      rating: 4.6,
-      reviews: 15,
-      image: farmPlots,
-      verified: true,
-      training: true,
-    },
-  ];
+  useEffect(() => {
+    fetchPlots();
+  }, []);
+
+  const fetchPlots = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("land_listings")
+        .select("*")
+        .eq("status", "active")
+        .gt("available_area_sqft", 0);
+
+      if (error) throw error;
+
+      setPlots(data || []);
+    } catch (error) {
+      console.error("Error fetching plots:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleFilter = (filter: string) => {
     setSelectedFilters(prev =>
@@ -91,23 +56,27 @@ const Browse = () => {
                           plot.location.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesDistrict = district === "all" || plot.location.toLowerCase().includes(district.toLowerCase());
       const matchesSize = size === "all" || 
-        (size === "small" && parseInt(plot.size) < 500) ||
-        (size === "medium" && parseInt(plot.size) >= 500 && parseInt(plot.size) <= 750) ||
-        (size === "large" && parseInt(plot.size) > 750);
+        (size === "small" && plot.total_area_sqft < 500) ||
+        (size === "medium" && plot.total_area_sqft >= 500 && plot.total_area_sqft <= 750) ||
+        (size === "large" && plot.total_area_sqft > 750);
       const matchesFilters = selectedFilters.length === 0 || 
-        selectedFilters.every(filter => 
-          filter === "Offers Training" ? plot.training : plot.amenities.includes(filter)
-        );
+        selectedFilters.every(filter => {
+          if (filter === "Offers Training") return plot.amenities?.includes("training");
+          if (filter === "Water Access") return plot.water_access;
+          if (filter === "Tool Shed") return plot.amenities?.includes("tool_shed");
+          if (filter === "Fenced") return plot.amenities?.includes("fenced");
+          return false;
+        });
 
       return matchesSearch && matchesDistrict && matchesSize && matchesFilters;
     });
 
     if (sortBy === "price-low") {
-      filtered.sort((a, b) => parseInt(a.price.replace(/[^\d]/g, '')) - parseInt(b.price.replace(/[^\d]/g, '')));
+      filtered.sort((a, b) => a.price_per_sqft_monthly - b.price_per_sqft_monthly);
     } else if (sortBy === "price-high") {
-      filtered.sort((a, b) => parseInt(b.price.replace(/[^\d]/g, '')) - parseInt(a.price.replace(/[^\d]/g, '')));
+      filtered.sort((a, b) => b.price_per_sqft_monthly - a.price_per_sqft_monthly);
     } else if (sortBy === "size") {
-      filtered.sort((a, b) => parseInt(b.size) - parseInt(a.size));
+      filtered.sort((a, b) => b.total_area_sqft - a.total_area_sqft);
     }
 
     return filtered;
@@ -222,69 +191,77 @@ const Browse = () => {
 
         {/* Plot Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedPlots.map((plot) => (
-            <Card key={plot.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={plot.image}
-                  alt={plot.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                {plot.verified && (
-                  <Badge className="absolute top-3 right-3 bg-secondary">
-                    <Shield className="h-3 w-3 mr-1" />
-                    Verified
-                  </Badge>
-                )}
-                {plot.training && (
-                  <Badge className="absolute top-3 left-3 bg-primary">
-                    Training Available
-                  </Badge>
-                )}
-              </div>
+          {loading ? (
+            <p className="text-muted-foreground col-span-full text-center py-8">Loading plots...</p>
+          ) : filteredAndSortedPlots.length === 0 ? (
+            <p className="text-muted-foreground col-span-full text-center py-8">No plots found</p>
+          ) : (
+            filteredAndSortedPlots.map((plot) => {
+              const amenitiesList = [];
+              if (plot.water_access) amenitiesList.push("Water Access");
+              if (plot.amenities?.includes("tool_shed")) amenitiesList.push("Tool Shed");
+              if (plot.amenities?.includes("fenced")) amenitiesList.push("Fenced");
+              if (plot.amenities?.includes("training")) amenitiesList.push("Training");
 
-              <CardContent className="pt-4">
-                <h3 className="font-bold text-lg mb-2 line-clamp-1">{plot.title}</h3>
-                
-                <div className="flex items-center text-sm text-muted-foreground mb-3">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span>{plot.location}</span>
-                </div>
+              const monthlyPrice = Math.round(plot.total_area_sqft * plot.price_per_sqft_monthly);
 
-                <div className="flex items-center gap-1 mb-3">
-                  <Star className="h-4 w-4 fill-secondary text-secondary" />
-                  <span className="font-medium">{plot.rating}</span>
-                  <span className="text-sm text-muted-foreground">({plot.reviews} reviews)</span>
-                </div>
-
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {plot.amenities.slice(0, 3).map((amenity, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
-                      {amenity}
+              return (
+                <Card key={plot.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={plot.images?.[0] || farmPlots}
+                      alt={plot.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <Badge className="absolute top-3 right-3 bg-secondary">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Verified
                     </Badge>
-                  ))}
-                  {plot.amenities.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{plot.amenities.length - 3} more
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex items-end justify-between mb-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Size</div>
-                    <div className="font-bold">{plot.size}</div>
+                    {plot.amenities?.includes("training") && (
+                      <Badge className="absolute top-3 left-3 bg-primary">
+                        Training Available
+                      </Badge>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{plot.price}</div>
-                    <div className="text-xs text-muted-foreground">for {plot.term}</div>
-                  </div>
-                </div>
 
-                <Button className="w-full" onClick={() => navigate(`/plot-details?id=${plot.id}`)}>View Details</Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <CardContent className="pt-4">
+                    <h3 className="font-bold text-lg mb-2 line-clamp-1">{plot.title}</h3>
+                    
+                    <div className="flex items-center text-sm text-muted-foreground mb-3">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span>{plot.location}</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {amenitiesList.slice(0, 3).map((amenity, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {amenity}
+                        </Badge>
+                      ))}
+                      {amenitiesList.length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{amenitiesList.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-end justify-between mb-4">
+                      <div>
+                        <div className="text-sm text-muted-foreground">Size</div>
+                        <div className="font-bold">{plot.total_area_sqft} sq ft</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">₹{monthlyPrice}</div>
+                        <div className="text-xs text-muted-foreground">per month</div>
+                      </div>
+                    </div>
+
+                    <Button className="w-full" onClick={() => navigate(`/plot-details?id=${plot.id}`)}>View Details</Button>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

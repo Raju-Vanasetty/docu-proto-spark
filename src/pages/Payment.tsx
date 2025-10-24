@@ -8,29 +8,129 @@ import { ArrowLeft, CreditCard, Wallet } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Payment = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const type = searchParams.get("type");
   const amount = searchParams.get("amount");
+  const itemId = searchParams.get("id");
+  const cartData = searchParams.get("cart");
+  const address = searchParams.get("address");
+  
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [cardNumber, setCardNumber] = useState("");
   const [cardName, setCardName] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
+  const [processing, setProcessing] = useState(false);
 
-  const handlePayment = (e: React.FormEvent) => {
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Payment Successful!",
-      description: `Your payment of ₹${amount} has been processed successfully.`,
-    });
-    setTimeout(() => {
-      navigate("/dashboard/user");
-    }, 1500);
+    if (!user) return;
+
+    setProcessing(true);
+    try {
+      if (type === "lease" && itemId) {
+        // Create plot lease
+        const { data: plot } = await supabase
+          .from("land_listings")
+          .select("*")
+          .eq("id", itemId)
+          .single();
+
+        if (plot) {
+          const { error } = await supabase.from("plot_leases").insert({
+            land_listing_id: itemId,
+            user_id: user.id,
+            area_sqft: plot.available_area_sqft,
+            monthly_price: parseFloat(amount || "0"),
+            start_date: new Date().toISOString().split("T")[0],
+            end_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          });
+
+          if (error) throw error;
+
+          // Update available area
+          await supabase
+            .from("land_listings")
+            .update({ available_area_sqft: 0, status: "leased" })
+            .eq("id", itemId);
+        }
+      } else if (type === "equipment" && itemId) {
+        // Create equipment rental
+        const { error } = await supabase.from("equipment_rentals").insert({
+          equipment_id: itemId,
+          user_id: user.id,
+          start_date: new Date().toISOString().split("T")[0],
+          end_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          total_price: parseFloat(amount || "0"),
+        });
+
+        if (error) throw error;
+
+        // Update equipment status
+        await supabase
+          .from("equipment_listings")
+          .update({ availability_status: "rented" })
+          .eq("id", itemId);
+      } else if (type === "marketplace" && cartData) {
+        // Create orders from cart
+        const items = JSON.parse(decodeURIComponent(cartData));
+        
+        for (const item of items) {
+          const { error } = await supabase.from("orders").insert({
+            produce_id: item.produceId,
+            buyer_id: user.id,
+            quantity: item.quantity,
+            total_price: item.price * item.quantity,
+            delivery_address: address || "",
+          });
+
+          if (error) throw error;
+
+          // Update produce quantity
+          const { data: produce } = await supabase
+            .from("produce_listings")
+            .select("quantity_available")
+            .eq("id", item.produceId)
+            .single();
+
+          if (produce) {
+            const newQuantity = produce.quantity_available - item.quantity;
+            await supabase
+              .from("produce_listings")
+              .update({ 
+                quantity_available: newQuantity,
+                status: newQuantity <= 0 ? 'sold_out' : 'active'
+              })
+              .eq("id", item.produceId);
+          }
+        }
+      }
+
+      toast({
+        title: "Payment Successful!",
+        description: `Your payment of ₹${amount} has been processed successfully.`,
+      });
+      
+      setTimeout(() => {
+        navigate("/dashboard/user");
+      }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Payment Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -135,8 +235,8 @@ const Payment = () => {
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Pay ₹{amount}
+                  <Button type="submit" className="w-full" size="lg" disabled={processing}>
+                    {processing ? "Processing..." : `Pay ₹${amount}`}
                   </Button>
                 </form>
               </CardContent>
